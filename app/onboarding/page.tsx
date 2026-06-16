@@ -1,21 +1,14 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { getSports } from "@/lib/queries";
+import { requireProfile } from "@/lib/auth";
+import { getSports, getColleges } from "@/lib/queries";
 import { Logo } from "@/components/Logo";
 import { OnboardingForm } from "@/components/OnboardingForm";
-import type { Profile } from "@/lib/types";
 
 export default async function OnboardingPage() {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  const [{ data: profile }, sports, { data: colleges }] = await Promise.all([
-    supabase.from("profiles").select("*").eq("id", user.id).single(),
+  // Don't require completed onboarding — this IS the onboarding page.
+  const [profile, sports, colleges] = await Promise.all([
+    requireProfile(false),
     getSports(),
-    supabase.from("colleges").select("name").order("name"),
+    getColleges(),
   ]);
 
   return (
@@ -30,11 +23,7 @@ export default async function OnboardingPage() {
         <p className="mb-6 mt-1 text-sm text-ink-500">
           Tell us how you play so we can match you with the right games.
         </p>
-        <OnboardingForm
-          profile={profile as Profile}
-          sports={sports}
-          colleges={(colleges ?? []).map((c) => c.name as string)}
-        />
+        <OnboardingForm profile={profile} sports={sports} colleges={colleges} />
       </main>
     </div>
   );

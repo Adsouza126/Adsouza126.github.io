@@ -1,7 +1,11 @@
 import { Plus, SearchX } from "lucide-react";
 import { requireProfile } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
-import { getSports, getDiscoverableGames, type GameFilters as GF } from "@/lib/queries";
+import {
+  getSports,
+  getColleges,
+  getDiscoverableGames,
+  type GameFilters as GF,
+} from "@/lib/queries";
 import { GameFilters } from "@/components/GameFilters";
 import { GameCard } from "@/components/GameCard";
 import { ButtonLink, EmptyState } from "@/components/ui";
@@ -12,7 +16,6 @@ export default async function GamesPage({
   searchParams: Record<string, string | undefined>;
 }) {
   await requireProfile();
-  const supabase = createClient();
 
   const filters: GF = {
     sportId: searchParams.sport,
@@ -26,10 +29,10 @@ export default async function GamesPage({
     openOnly: searchParams.open === "1",
   };
 
-  const [sports, games, { data: colleges }] = await Promise.all([
+  const [sports, games, colleges] = await Promise.all([
     getSports(),
     getDiscoverableGames(filters),
-    supabase.from("colleges").select("name").order("name"),
+    getColleges(),
   ]);
 
   return (
@@ -49,7 +52,7 @@ export default async function GamesPage({
 
       <GameFilters
         sports={sports}
-        colleges={(colleges ?? []).map((c) => c.name as string)}
+        colleges={colleges}
       />
 
       {games.length ? (

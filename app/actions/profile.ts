@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { IS_DEMO, demo } from "@/lib/demo";
 import type { Availability, SkillLevel } from "@/lib/constants";
 import type { ActionResult } from "@/lib/types";
 
@@ -25,6 +26,27 @@ export type ProfileInput = {
 
 /** Saves the profile + selected sports, marking onboarding complete. */
 export async function saveProfile(input: ProfileInput): Promise<ActionResult> {
+  if (IS_DEMO) {
+    demo.saveProfile({
+      full_name: input.full_name,
+      college: input.college,
+      bio: input.bio,
+      avatar_url: input.avatar_url,
+      campus_area: input.campus_area,
+      preferred_distance: input.preferred_distance,
+      availability: input.availability,
+      sports: input.sports.map((s) => ({
+        user_id: "",
+        sport_id: s.sport_id,
+        skill_level: s.skill_level,
+        preferred_position: s.preferred_position,
+      })),
+    });
+    revalidatePath("/dashboard");
+    revalidatePath("/profile");
+    return { ok: true };
+  }
+
   const supabase = createClient();
   const {
     data: { user },

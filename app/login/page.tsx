@@ -17,10 +17,21 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // When no Supabase project is configured the app runs in demo mode —
+  // any "log in" simply enters the sample experience.
+  const demo = !process.env.NEXT_PUBLIC_SUPABASE_URL;
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
+
+    if (demo) {
+      router.push(next);
+      router.refresh();
+      return;
+    }
+
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -37,13 +48,19 @@ function LoginForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
+      {demo ? (
+        <p className="rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-700">
+          🎬 <b>Demo mode</b> — just click <b>Log In</b> to explore Rally with
+          sample data. No password needed.
+        </p>
+      ) : null}
       <div>
         <Label htmlFor="email">College email</Label>
         <Input
           id="email"
           type="email"
           autoComplete="email"
-          required
+          required={!demo}
           placeholder="you@udel.edu"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -55,7 +72,7 @@ function LoginForm() {
           id="password"
           type="password"
           autoComplete="current-password"
-          required
+          required={!demo}
           placeholder="••••••••"
           value={password}
           onChange={(e) => setPassword(e.target.value)}

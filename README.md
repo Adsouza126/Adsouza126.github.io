@@ -14,6 +14,33 @@ sport-based campus communities.
 
 ---
 
+## ▶️ Try it instantly (no setup)
+
+Rally ships with a built-in **demo mode** that runs on realistic sample data
+**with no database and no configuration**. You can:
+
+**A) Get a live link — click to deploy (browser only, free):**
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FAdsouza126%2FAdsouza126.github.io%2Ftree%2Fclaude%2Frally-sports-matchmaking-mvp-pjsslu&project-name=rally&repository-name=rally)
+
+1. Click the button → sign in with **GitHub** (free).
+2. Click **Deploy** (you don't need to set any environment variables).
+3. After ~1 minute you'll get a live URL like `https://rally-xxxx.vercel.app`.
+4. Open it, click **Log In** → **Log In** (demo mode needs no password).
+
+**B) Or run it on your computer:**
+```bash
+npm install
+npm run dev
+```
+Open **http://localhost:3000** — it just works, no `.env` needed.
+
+> In demo mode the data lives in memory, so anything you create resets when the
+> server restarts. To use **real accounts and a persistent database**, follow
+> the Supabase setup below.
+
+---
+
 ## ✨ Features
 
 | Area | What it does |
@@ -81,7 +108,12 @@ sport-based campus communities.
 
 ---
 
-## 🚀 Run it locally
+## 🚀 Run with a real database (Supabase) — optional
+
+Demo mode above needs none of this. Follow these steps only when you want
+**real user accounts and data that persists** (e.g. a production deployment).
+When the Supabase env vars below are present, Rally automatically switches from
+demo mode to the live database.
 
 ### 1. Prerequisites
 - Node.js 18+
