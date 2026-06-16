@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { Plus, CalendarDays, Sparkles, Users, Trophy } from "lucide-react";
 import { requireProfile } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
 import {
   getMyGames,
   getDiscoverableGames,
   getUserContext,
+  getMyCommunityIds,
+  getCommunitiesByCollege,
 } from "@/lib/queries";
 import { recommendGames } from "@/lib/recommendations";
 import { GameCard } from "@/components/GameCard";
@@ -20,7 +21,6 @@ import {
 
 export default async function DashboardPage() {
   const profile = await requireProfile();
-  const supabase = createClient();
 
   const [myGames, allGames, ctx] = await Promise.all([
     getMyGames(profile.id),
@@ -40,21 +40,13 @@ export default async function DashboardPage() {
   ).slice(0, 6);
 
   // Suggested communities at the user's college the user hasn't joined.
-  const { data: memberRows } = await supabase
-    .from("community_members")
-    .select("community_id")
-    .eq("user_id", profile.id);
-  const joinedCommunityIds = new Set(
-    (memberRows ?? []).map((m) => m.community_id as string),
-  );
+  const [joinedIds, communities] = await Promise.all([
+    getMyCommunityIds(profile.id),
+    getCommunitiesByCollege(profile.college ?? ""),
+  ]);
+  const joinedCommunityIds = new Set(joinedIds);
 
-  const { data: communities } = await supabase
-    .from("communities")
-    .select("id, name, slug, college, sport_id, description")
-    .eq("college", profile.college ?? "")
-    .limit(8);
-
-  const suggestedCommunities = (communities ?? [])
+  const suggestedCommunities = communities
     .filter((c) => !joinedCommunityIds.has(c.id))
     .slice(0, 3);
 

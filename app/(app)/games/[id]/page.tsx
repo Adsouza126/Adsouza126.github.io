@@ -10,8 +10,11 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { requireProfile } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
-import { getGameById } from "@/lib/queries";
+import {
+  getGameById,
+  getGameParticipants,
+  getGameMessages,
+} from "@/lib/queries";
 import { Card, CardBody, Badge } from "@/components/ui";
 import { Avatar } from "@/components/Avatar";
 import { ReliabilityBadge } from "@/components/ReliabilityBadge";
@@ -21,7 +24,6 @@ import { GameChat, type ChatMessage } from "@/components/game/GameChat";
 import { TeamDisplay } from "@/components/game/TeamDisplay";
 import type { ParticipantView } from "@/components/game/types";
 import { formatGameTime } from "@/lib/utils";
-import type { SkillLevel } from "@/lib/constants";
 
 export default async function GameDetailPage({
   params,
@@ -29,66 +31,14 @@ export default async function GameDetailPage({
   params: { id: string };
 }) {
   const profile = await requireProfile();
-  const supabase = createClient();
   const game = await getGameById(params.id);
   if (!game) notFound();
 
-  // Roster with profiles.
-  const { data: participantRows } = await supabase
-    .from("game_participants")
-    .select(
-      "user_id, team, profile:profiles!game_participants_user_id_fkey(id, full_name, avatar_url, reliability_score)",
-    )
-    .eq("game_id", game.id)
-    .order("joined_at", { ascending: true });
-
-  // Each player's skill for this sport.
-  const userIds = (participantRows ?? []).map((p) => p.user_id as string);
-  const { data: skillRows } = userIds.length
-    ? await supabase
-        .from("user_sports")
-        .select("user_id, skill_level, preferred_position")
-        .eq("sport_id", game.sport_id)
-        .in("user_id", userIds)
-    : { data: [] };
-
-  const skillMap = new Map(
-    (skillRows ?? []).map((s) => [
-      s.user_id as string,
-      {
-        skill_level: s.skill_level as SkillLevel,
-        preferred_position: s.preferred_position as string | null,
-      },
-    ]),
-  );
-
-  const participants: ParticipantView[] = (participantRows ?? []).map((p) => {
-    const prof = p.profile as unknown as {
-      full_name: string | null;
-      avatar_url: string | null;
-      reliability_score: number;
-    } | null;
-    const meta = skillMap.get(p.user_id as string);
-    return {
-      user_id: p.user_id as string,
-      name: prof?.full_name ?? "Player",
-      avatar_url: prof?.avatar_url ?? null,
-      reliability_score: prof?.reliability_score ?? 100,
-      skill_level: meta?.skill_level ?? "Casual",
-      preferred_position: meta?.preferred_position ?? null,
-      team: (p.team as "A" | "B" | null) ?? null,
-    };
-  });
-
-  // Chat messages.
-  const { data: messageRows } = await supabase
-    .from("messages")
-    .select(
-      "id, body, created_at, user_id, author:profiles!messages_user_id_fkey(full_name, avatar_url)",
-    )
-    .eq("game_id", game.id)
-    .order("created_at", { ascending: true });
-  const messages = (messageRows ?? []) as unknown as ChatMessage[];
+  const [participants, messages] = await Promise.all([
+    getGameParticipants(game),
+    getGameMessages(game.id),
+  ]);
+  const chatMessages = messages as unknown as ChatMessage[];
 
   const isHost = game.host_id === profile.id;
   const isParticipant = participants.some((p) => p.user_id === profile.id);
@@ -204,7 +154,7 @@ export default async function GameDetailPage({
               </h3>
               <GameChat
                 gameId={game.id}
-                messages={messages}
+                messages={chatMessages}
                 currentUserId={profile.id}
                 canPost={isParticipant || isHost}
               />

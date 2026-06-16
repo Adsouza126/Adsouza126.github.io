@@ -20,20 +20,34 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
 
-  // Load the list of colleges to populate the dropdown.
+  const demo = !process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+  // Load the list of colleges to populate the dropdown (skip in demo mode).
   useEffect(() => {
+    if (demo) {
+      setColleges([
+        { id: "1", name: "University of Delaware", slug: "ud", email_domain: "udel.edu", created_at: "" },
+      ]);
+      return;
+    }
     const supabase = createClient();
     supabase
       .from("colleges")
       .select("*")
       .order("name")
       .then(({ data }) => setColleges(data ?? []));
-  }, []);
+  }, [demo]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setNotice(null);
+
+    if (demo) {
+      router.push("/onboarding");
+      router.refresh();
+      return;
+    }
 
     // Soft college-email check — encourage .edu but never block.
     const domain = colleges.find((c) => c.name === college)?.email_domain;

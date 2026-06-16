@@ -23,8 +23,11 @@ export function Navbar({ profile }: { profile: Profile }) {
   const [open, setOpen] = useState(false);
 
   async function signOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    // In demo mode there's no real session to clear.
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    }
     router.push("/");
     router.refresh();
   }

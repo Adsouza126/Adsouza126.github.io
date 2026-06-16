@@ -2,8 +2,12 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Plus, Users, CalendarDays, MessagesSquare } from "lucide-react";
 import { requireProfile } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
-import { getDiscoverableGames } from "@/lib/queries";
+import {
+  getDiscoverableGames,
+  getCommunityById,
+  getCommunityMembers,
+  getCommunityMessages,
+} from "@/lib/queries";
 import { Card, CardBody, ButtonLink, SectionTitle, EmptyState } from "@/components/ui";
 import { Avatar } from "@/components/Avatar";
 import { ReliabilityBadge } from "@/components/ReliabilityBadge";
@@ -21,47 +25,23 @@ export default async function CommunityDetailPage({
   params: { id: string };
 }) {
   const profile = await requireProfile();
-  const supabase = createClient();
 
-  const { data: community } = await supabase
-    .from("communities")
-    .select("*, sport:sports(*)")
-    .eq("id", params.id)
-    .maybeSingle();
+  const community = await getCommunityById(params.id);
   if (!community) notFound();
 
   const sport = community.sport as Sport;
 
-  const [{ data: memberRows }, { data: postRows }, games] = await Promise.all([
-    supabase
-      .from("community_members")
-      .select(
-        "user_id, profile:profiles!community_members_user_id_fkey(id, full_name, avatar_url, reliability_score)",
-      )
-      .eq("community_id", community.id),
-    supabase
-      .from("messages")
-      .select(
-        "id, body, created_at, author:profiles!messages_user_id_fkey(full_name, avatar_url)",
-      )
-      .eq("community_id", community.id)
-      .order("created_at", { ascending: false }),
+  const [members, postRows, games] = await Promise.all([
+    getCommunityMembers(community.id as string),
+    getCommunityMessages(community.id as string),
     getDiscoverableGames({
       sportId: community.sport_id as string,
       college: community.college as string,
     }),
   ]);
 
-  const members = (memberRows ?? []).map((m) => ({
-    user_id: m.user_id as string,
-    ...(m.profile as unknown as {
-      full_name: string | null;
-      avatar_url: string | null;
-      reliability_score: number;
-    }),
-  }));
   const isMember = members.some((m) => m.user_id === profile.id);
-  const posts = (postRows ?? []) as unknown as DiscussionPost[];
+  const posts = postRows as unknown as DiscussionPost[];
 
   return (
     <div className="space-y-6">

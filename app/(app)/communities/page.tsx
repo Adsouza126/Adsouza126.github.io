@@ -1,41 +1,24 @@
 import Link from "next/link";
 import { Users } from "lucide-react";
 import { requireProfile } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
+import {
+  getCommunitiesWithMeta,
+  getMyCommunityIds,
+  type CommunityCardData,
+} from "@/lib/queries";
 import { Card, CardBody, Badge, SectionTitle } from "@/components/ui";
-import type { Sport } from "@/lib/types";
 
-type CommunityRow = {
-  id: string;
-  name: string;
-  college: string;
-  description: string | null;
-  sport: Pick<Sport, "name" | "icon">;
-  community_members: { count: number }[];
-};
+type CommunityRow = CommunityCardData;
 
 export default async function CommunitiesPage() {
   const profile = await requireProfile();
-  const supabase = createClient();
 
-  const [{ data: communities }, { data: memberRows }] = await Promise.all([
-    supabase
-      .from("communities")
-      .select(
-        "id, name, college, description, sport:sports(name, icon), community_members(count)",
-      )
-      .order("college")
-      .order("name"),
-    supabase
-      .from("community_members")
-      .select("community_id")
-      .eq("user_id", profile.id),
+  const [rows, joinedIds] = await Promise.all([
+    getCommunitiesWithMeta(),
+    getMyCommunityIds(profile.id),
   ]);
 
-  const joined = new Set(
-    (memberRows ?? []).map((m) => m.community_id as string),
-  );
-  const rows = (communities ?? []) as unknown as CommunityRow[];
+  const joined = new Set(joinedIds);
 
   const mine = rows.filter((c) => c.college === profile.college);
   const others = rows.filter((c) => c.college !== profile.college);
@@ -93,7 +76,7 @@ function CommunityCard({
   community: CommunityRow;
   isMember: boolean;
 }) {
-  const count = community.community_members?.[0]?.count ?? 0;
+  const count = community.memberCount;
   return (
     <Link href={`/communities/${community.id}`}>
       <Card className="h-full transition-shadow hover:shadow-lg">

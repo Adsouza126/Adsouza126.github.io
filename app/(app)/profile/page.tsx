@@ -1,35 +1,22 @@
 import { Pencil, MapPin, GraduationCap, History } from "lucide-react";
 import { requireProfile } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
+import {
+  getUserSportsDetailed,
+  getReliabilityLogs,
+} from "@/lib/queries";
 import { Card, CardBody, Badge, ButtonLink, SectionTitle } from "@/components/ui";
 import { Avatar } from "@/components/Avatar";
 import { ReliabilityBadge } from "@/components/ReliabilityBadge";
 import { DAYS, type Day } from "@/lib/constants";
 import { relativeTime } from "@/lib/utils";
-import type { Sport } from "@/lib/types";
 
 export default async function ProfilePage() {
   const profile = await requireProfile();
-  const supabase = createClient();
 
-  const [{ data: sportRows }, { data: logs }] = await Promise.all([
-    supabase
-      .from("user_sports")
-      .select("skill_level, preferred_position, sport:sports(name, icon)")
-      .eq("user_id", profile.id),
-    supabase
-      .from("reliability_logs")
-      .select("*")
-      .eq("user_id", profile.id)
-      .order("created_at", { ascending: false })
-      .limit(6),
+  const [sports, logs] = await Promise.all([
+    getUserSportsDetailed(profile.id),
+    getReliabilityLogs(profile.id),
   ]);
-
-  const sports = (sportRows ?? []) as unknown as {
-    skill_level: string;
-    preferred_position: string | null;
-    sport: Pick<Sport, "name" | "icon">;
-  }[];
 
   const availDays = DAYS.filter(
     (d) => (profile.availability?.[d as Day]?.length ?? 0) > 0,

@@ -3,11 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { IS_DEMO, demo } from "@/lib/demo";
 import { balanceTeams, type BalancePlayer } from "@/lib/teamBalancing";
 import { RELIABILITY, type SkillLevel, type SkillTarget } from "@/lib/constants";
 import type { ActionResult } from "@/lib/types";
 
 async function requireUserId() {
+  if (IS_DEMO) return demo.currentProfile().id;
   const supabase = createClient();
   const {
     data: { user },
@@ -32,9 +34,30 @@ export type CreateGameInput = {
 
 /** Creates a game (hosted by the current user) and auto-joins the host. */
 export async function createGame(input: CreateGameInput): Promise<ActionResult> {
-  const supabase = createClient();
   const userId = await requireUserId();
 
+  if (IS_DEMO) {
+    const id = demo.createGame({
+      host_id: userId,
+      sport_id: input.sport_id,
+      title: input.title || null,
+      starts_at: input.starts_at,
+      location: input.location,
+      campus_area: input.campus_area || null,
+      college: demo.currentProfile().college,
+      max_players: input.max_players,
+      skill_target: input.skill_target,
+      competitive: input.competitive,
+      is_public: input.is_public,
+      description: input.description || null,
+      auto_balance: input.auto_balance,
+    });
+    revalidatePath("/games");
+    revalidatePath("/dashboard");
+    return { id };
+  }
+
+  const supabase = createClient();
   const { data: profile } = await supabase
     .from("profiles")
     .select("college")
@@ -74,8 +97,14 @@ export async function createGame(input: CreateGameInput): Promise<ActionResult> 
 }
 
 export async function joinGame(gameId: string): Promise<ActionResult> {
-  const supabase = createClient();
   const userId = await requireUserId();
+  if (IS_DEMO) {
+    demo.joinGame(gameId, userId);
+    revalidatePath(`/games/${gameId}`);
+    revalidatePath("/dashboard");
+    return { ok: true };
+  }
+  const supabase = createClient();
   const { error } = await supabase
     .from("game_participants")
     .insert({ game_id: gameId, user_id: userId });
@@ -86,8 +115,14 @@ export async function joinGame(gameId: string): Promise<ActionResult> {
 }
 
 export async function leaveGame(gameId: string): Promise<ActionResult> {
-  const supabase = createClient();
   const userId = await requireUserId();
+  if (IS_DEMO) {
+    demo.leaveGame(gameId, userId);
+    revalidatePath(`/games/${gameId}`);
+    revalidatePath("/dashboard");
+    return { ok: true };
+  }
+  const supabase = createClient();
   await supabase
     .from("game_participants")
     .delete()
@@ -99,8 +134,14 @@ export async function leaveGame(gameId: string): Promise<ActionResult> {
 }
 
 export async function cancelGame(gameId: string): Promise<ActionResult> {
-  const supabase = createClient();
   await requireUserId();
+  if (IS_DEMO) {
+    demo.cancelGame(gameId);
+    revalidatePath(`/games/${gameId}`);
+    revalidatePath("/dashboard");
+    return { ok: true };
+  }
+  const supabase = createClient();
   await supabase
     .from("games")
     .update({ status: "cancelled" })
@@ -111,10 +152,15 @@ export async function cancelGame(gameId: string): Promise<ActionResult> {
 }
 
 export async function postGameMessage(gameId: string, body: string): Promise<ActionResult> {
-  const supabase = createClient();
   const userId = await requireUserId();
   const trimmed = body.trim();
   if (!trimmed) return { error: "Message is empty" };
+  if (IS_DEMO) {
+    demo.postGameMessage(gameId, userId, trimmed);
+    revalidatePath(`/games/${gameId}`);
+    return { ok: true };
+  }
+  const supabase = createClient();
   await supabase
     .from("messages")
     .insert({ game_id: gameId, user_id: userId, body: trimmed });
@@ -127,9 +173,17 @@ export async function postGameMessage(gameId: string, body: string): Promise<Act
  * skill level for this game's sport, then persists the assignment.
  */
 export async function generateTeams(gameId: string): Promise<ActionResult> {
-  const supabase = createClient();
   await requireUserId();
 
+  if (IS_DEMO) {
+    if (demo.gameParticipants(gameId).length < 2)
+      return { error: "Need at least 2 players to balance teams." };
+    demo.generateTeams(gameId);
+    revalidatePath(`/games/${gameId}`);
+    return { ok: true };
+  }
+
+  const supabase = createClient();
   const { data: game } = await supabase
     .from("games")
     .select("sport_id")
@@ -216,9 +270,16 @@ export async function recordAttendance(
   gameId: string,
   results: { userId: string; status: "attended" | "no_show" }[],
 ): Promise<ActionResult> {
-  const supabase = createClient();
   const hostId = await requireUserId();
 
+  if (IS_DEMO) {
+    demo.recordAttendance(gameId, results);
+    revalidatePath(`/games/${gameId}`);
+    revalidatePath("/dashboard");
+    return { ok: true };
+  }
+
+  const supabase = createClient();
   for (const r of results) {
     await supabase.from("attendance").upsert(
       {
