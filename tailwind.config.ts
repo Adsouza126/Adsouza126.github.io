@@ -9,18 +9,31 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Rally brand palette — a sporty, energetic emerald + deep slate.
+        // Rally brand — navy blue (structure) pulled from the logo.
         brand: {
-          50: "#ecfdf5",
-          100: "#d1fae5",
-          200: "#a7f3d0",
-          300: "#6ee7b7",
-          400: "#34d399",
-          500: "#10b981",
-          600: "#059669",
-          700: "#047857",
-          800: "#065f46",
-          900: "#064e3b",
+          50: "#eef2f8",
+          100: "#d9e1ee",
+          200: "#b7c6dc",
+          300: "#8ba1c2",
+          400: "#6480a5",
+          500: "#4E6A95", // secondary blue fill
+          600: "#3f567b",
+          700: "#334765",
+          800: "#243a59",
+          900: "#1A3154", // primary navy (logo outline)
+        },
+        // Accent orange — primary CTAs, active states, notifications.
+        accent: {
+          50: "#fcf0ec",
+          100: "#f8dcd3",
+          200: "#f1b8a7",
+          300: "#e89177",
+          400: "#dd6f50",
+          500: "#D1694F", // hover / highlight
+          600: "#CC502F", // primary CTA (RALLY text / pin)
+          700: "#a83f22",
+          800: "#8a3520",
+          900: "#722d1d",
         },
         ink: {
           50: "#f8fafc",
@@ -32,8 +45,8 @@ const config: Config = {
           600: "#475569",
           700: "#334155",
           800: "#1e293b",
-          900: "#0f172a",
-          950: "#020617",
+          900: "#1A3154",
+          950: "#0f1d33",
         },
       },
       borderRadius: {

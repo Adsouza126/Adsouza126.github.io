@@ -10,13 +10,15 @@ type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
 
 const buttonBase =
-  "inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60 disabled:opacity-50 disabled:pointer-events-none";
+  "inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/60 disabled:opacity-50 disabled:pointer-events-none";
 
 const buttonVariants: Record<ButtonVariant, string> = {
-  primary: "bg-brand-600 text-white hover:bg-brand-700 shadow-sm",
-  secondary:
-    "bg-white text-ink-800 border border-ink-200 hover:bg-ink-50 shadow-sm",
-  ghost: "text-ink-700 hover:bg-ink-100",
+  // Primary CTA = brand orange.
+  primary: "bg-accent-600 text-white hover:bg-accent-500 shadow-sm",
+  // Secondary CTA = navy fill.
+  secondary: "bg-brand-900 text-white hover:bg-brand-800 shadow-sm",
+  // Quiet/outline button.
+  ghost: "text-brand-900 hover:bg-ink-100",
   danger: "bg-red-600 text-white hover:bg-red-700",
 };
 

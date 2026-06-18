@@ -70,7 +70,7 @@ export default function LandingPage() {
           </Badge>
           <h1 className="mx-auto max-w-3xl text-4xl font-extrabold tracking-tight text-ink-900 sm:text-6xl">
             Find your next{" "}
-            <span className="text-brand-600">pickup game.</span>
+            <span className="text-accent-600">pickup game.</span>
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-lg text-ink-600">
             Rally connects you with students at your school for balanced,
@@ -122,7 +122,7 @@ export default function LandingPage() {
 
       {/* CTA */}
       <section className="mx-auto max-w-6xl px-4 pb-24">
-        <div className="overflow-hidden rounded-3xl bg-ink-900 px-6 py-14 text-center sm:px-12">
+        <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-brand-900 to-brand-500 px-6 py-14 text-center sm:px-12">
           <h2 className="text-3xl font-bold text-white">
             Ready to rally your campus?
           </h2>
